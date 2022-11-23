@@ -1,0 +1,6 @@
+22/tcp ssh
+631/tcp ipp
+3389/tcp ms-wbt-server
+5900/tcp vnc
+8080/tcp http-proxy
+50000/tcp ibm-db2
