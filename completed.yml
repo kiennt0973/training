@@ -1,0 +1,79 @@
+- job:
+    name: Completed
+    description: 'Automatically generated test'
+    project-type: freestyle
+    wrappers:
+      - timestamps
+      - credentials-binding:
+          - username-password-separated:
+              credential-id: myuser
+              username: myuser
+              password: mypass
+    parameters:
+      - string:
+          name: HOST_IP
+          default: 54.169.128.207
+          description: 'default IP'
+      - string:
+          name: DIR_PATH
+          default: '/var/lib/jenkins'
+          description: 'default directory'
+      - bool:
+          name: EXECUTE_WITH_SSH
+          default: true
+          description: 'default is true'
+    properties:
+      - build-discarder:
+          days-to-keep: 7
+          num-to-keep: 3
+    triggers:
+      - timed: 'H 0 * * 5'
+      - gerrit: 
+          server-name: 'gerrit_5.4'
+          trigger-on:
+            - patchset-created-event:
+                exclude-drafts: false
+                exclude-trivial-rebase: false
+                exclude-no-code-change: false
+                exclude-private: false
+                exclude-wip: false
+            - draft-published-event
+            - change-merged-event
+            - ref-updated-event
+          projects:
+            - project-compare-type: 'PLAIN'
+              project-pattern: 'JB1'
+              branches:
+              - branch-compare-type: 'PLAIN'
+                branch-pattern: 'build1'
+      - generic-webhook-trigger:
+          post-content-params:
+              - type: JSONPath
+                key: post1
+                value: $.post1
+          request-params:
+              - key: request_1
+                regex-filter: request_1
+          header-params:
+              - key: header_1
+                regex-filter: header_1
+          print-post-content: true
+          print-contrib-var: true
+          cause: Generic Cause
+          token: completed
+          silent-response: true
+    builders:
+      - system-groovy:
+          command: !include-raw: completed.groovy
+      - shell: | 
+                if $EXECUTE_WITH_SSH == true
+                then
+                    cd 
+                    ssh -i OpenSSh.pem  ubuntu@54.169.128.207 "./jenkins.sh $(hostname)"
+                else
+                    curl -v -H "Content-Type: application/json" -X POST -d "{'post1':'Build Job Completed'}" http://kiennt:Kien123456@localhost:8080/generic-webhook-trigger/invoke?token=completed
+                fi
+    publishers:
+      - slack:
+         notify-success: True
+         notify-every-failure: True
